@@ -86,7 +86,7 @@ export const ChefManagement = () => {
     location: "",
     bio: "",
     priceRange: "",
-    status: 'active' as const
+    status: 'active' as 'active' | 'inactive'
   });
 
   const handleAddChef = () => {
