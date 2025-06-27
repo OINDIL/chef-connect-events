@@ -55,7 +55,10 @@ export const eventService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(event => ({
+      ...event,
+      status: event.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+    }));
   },
 
   async createEvent(eventData: CreateEventData): Promise<Event> {
@@ -73,7 +76,10 @@ export const eventService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+    };
   },
 
   async updateEventStatus(id: string, status: Event['status']): Promise<Event> {
@@ -92,7 +98,10 @@ export const eventService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+    };
   },
 
   async deleteEvent(id: string): Promise<void> {

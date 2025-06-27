@@ -42,7 +42,10 @@ export const chefService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(chef => ({
+      ...chef,
+      status: chef.status as 'active' | 'inactive'
+    }));
   },
 
   async createChef(chefData: CreateChefData): Promise<Chef> {
@@ -57,7 +60,10 @@ export const chefService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async updateChef(id: string, chefData: Partial<CreateChefData>): Promise<Chef> {
@@ -73,7 +79,10 @@ export const chefService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async deleteChef(id: string): Promise<void> {
