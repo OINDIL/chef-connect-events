@@ -8,76 +8,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Star, MapPin, Phone, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface Chef {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  specialty: string;
-  experience: number;
-  rating: number;
-  location: string;
-  bio: string;
-  priceRange: string;
-  status: 'active' | 'inactive';
-  image: string;
-}
-
-const initialChefs: Chef[] = [
-  {
-    id: 1,
-    name: "Chef Mario Rossi",
-    email: "mario@example.com",
-    phone: "+1 (555) 123-4567",
-    specialty: "Italian Cuisine",
-    experience: 15,
-    rating: 4.9,
-    location: "New York, NY",
-    bio: "Passionate Italian chef with 15 years of experience in fine dining.",
-    priceRange: "$150-250/hour",
-    status: 'active',
-    image: "photo-1649972904349-6e44c42644a7"
-  },
-  {
-    id: 2,
-    name: "Chef Sarah Johnson",
-    email: "sarah@example.com",
-    phone: "+1 (555) 234-5678",
-    specialty: "French Cuisine",
-    experience: 12,
-    rating: 4.8,
-    location: "Los Angeles, CA",
-    bio: "French cuisine specialist with expertise in molecular gastronomy.",
-    priceRange: "$120-200/hour",
-    status: 'active',
-    image: "photo-1488590528505-98d2b5aba04b"
-  },
-  {
-    id: 3,
-    name: "Chef David Chen",
-    email: "david@example.com",
-    phone: "+1 (555) 345-6789",
-    specialty: "Asian Fusion",
-    experience: 10,
-    rating: 4.7,
-    location: "San Francisco, CA",
-    bio: "Creative Asian fusion chef blending traditional and modern techniques.",
-    priceRange: "$100-180/hour",
-    status: 'active',
-    image: "photo-1581091226825-a6a2a5aee158"
-  }
-];
+import { Plus, Edit, Trash2, Star, MapPin, Phone, Mail, Loader2 } from "lucide-react";
+import { useChefs } from "@/hooks/useChefs";
+import { CreateChefData } from "@/services/chefService";
 
 export const ChefManagement = () => {
-  const [chefs, setChefs] = useState<Chef[]>(initialChefs);
+  const { chefs, loading, addChef, deleteChef } = useChefs();
   const [isAddingChef, setIsAddingChef] = useState(false);
-  const [editingChef, setEditingChef] = useState<Chef | null>(null);
-  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newChef, setNewChef] = useState({
+  const [newChef, setNewChef] = useState<CreateChefData>({
     name: "",
     email: "",
     phone: "",
@@ -85,54 +25,48 @@ export const ChefManagement = () => {
     experience: 0,
     location: "",
     bio: "",
-    priceRange: "",
-    status: 'active' as 'active' | 'inactive'
+    price_range: "",
+    status: 'active'
   });
 
-  const handleAddChef = () => {
+  const handleAddChef = async () => {
     if (!newChef.name || !newChef.email || !newChef.specialty) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       return;
     }
 
-    const chef: Chef = {
-      id: Date.now(),
-      ...newChef,
-      rating: 0,
-      image: "photo-1649972904349-6e44c42644a7"
-    };
-
-    setChefs([...chefs, chef]);
-    setNewChef({
-      name: "",
-      email: "",
-      phone: "",
-      specialty: "",
-      experience: 0,
-      location: "",
-      bio: "",
-      priceRange: "",
-      status: 'active'
-    });
-    setIsAddingChef(false);
-    
-    toast({
-      title: "Success",
-      description: "Chef added successfully!",
-    });
+    try {
+      setIsSubmitting(true);
+      await addChef(newChef);
+      setNewChef({
+        name: "",
+        email: "",
+        phone: "",
+        specialty: "",
+        experience: 0,
+        location: "",
+        bio: "",
+        price_range: "",
+        status: 'active'
+      });
+      setIsAddingChef(false);
+    } catch (error) {
+      console.error('Error adding chef:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteChef = (id: number) => {
-    setChefs(chefs.filter(chef => chef.id !== id));
-    toast({
-      title: "Success",
-      description: "Chef removed successfully!",
-    });
+  const handleDeleteChef = async (id: string) => {
+    await deleteChef(id);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -226,8 +160,8 @@ export const ChefManagement = () => {
                 <Label htmlFor="priceRange">Price Range</Label>
                 <Input
                   id="priceRange"
-                  value={newChef.priceRange}
-                  onChange={(e) => setNewChef({ ...newChef, priceRange: e.target.value })}
+                  value={newChef.price_range}
+                  onChange={(e) => setNewChef({ ...newChef, price_range: e.target.value })}
                   placeholder="$100-200/hour"
                 />
               </div>
@@ -258,7 +192,8 @@ export const ChefManagement = () => {
               </div>
             </div>
             <div className="flex gap-2 pt-4">
-              <Button onClick={handleAddChef} className="flex-1">
+              <Button onClick={handleAddChef} className="flex-1" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Add Chef
               </Button>
               <Button variant="outline" onClick={() => setIsAddingChef(false)}>
@@ -276,7 +211,7 @@ export const ChefManagement = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <img
-                    src={`https://images.unsplash.com/${chef.image}?auto=format&fit=crop&w=100&h=100`}
+                    src={`https://images.unsplash.com/${chef.image_url || 'photo-1649972904349-6e44c42644a7'}?auto=format&fit=crop&w=100&h=100`}
                     alt={chef.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
@@ -298,24 +233,30 @@ export const ChefManagement = () => {
               </div>
               
               <div className="space-y-2 text-sm">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span>{chef.location}</span>
-                </div>
+                {chef.location && (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span>{chef.location}</span>
+                  </div>
+                )}
                 <div className="flex items-center space-x-2">
                   <Mail className="h-4 w-4 text-gray-400" />
                   <span>{chef.email}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
-                  <span>{chef.phone}</span>
-                </div>
+                {chef.phone && (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <span>{chef.phone}</span>
+                  </div>
+                )}
               </div>
 
-              <p className="text-sm text-gray-600 line-clamp-2">{chef.bio}</p>
+              {chef.bio && (
+                <p className="text-sm text-gray-600 line-clamp-2">{chef.bio}</p>
+              )}
               
               <div className="flex items-center justify-between pt-2">
-                <span className="text-sm font-medium text-green-600">{chef.priceRange}</span>
+                <span className="text-sm font-medium text-green-600">{chef.price_range}</span>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm">
                     <Edit className="h-4 w-4" />
@@ -334,6 +275,14 @@ export const ChefManagement = () => {
           </Card>
         ))}
       </div>
+
+      {chefs.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-gray-500">No chefs found. Add your first chef to get started!</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

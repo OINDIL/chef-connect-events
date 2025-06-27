@@ -5,107 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, MapPin, Users, Clock, Phone, Mail, Search } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface Event {
-  id: number;
-  title: string;
-  type: string;
-  date: string;
-  time: string;
-  location: string;
-  guests: number;
-  chef: string;
-  client: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  price: number;
-  description: string;
-}
-
-const initialEvents: Event[] = [
-  {
-    id: 1,
-    title: "Elegant Wedding Reception",
-    type: "Wedding",
-    date: "2024-07-15",
-    time: "18:00",
-    location: "Grand Ballroom, NYC",
-    guests: 150,
-    chef: "Chef Mario Rossi",
-    client: {
-      name: "Emily & James",
-      email: "emily.james@example.com",
-      phone: "+1 (555) 123-4567"
-    },
-    status: "confirmed",
-    price: 3500,
-    description: "Elegant Italian wedding reception with multi-course dinner"
-  },
-  {
-    id: 2,
-    title: "Corporate Annual Dinner",
-    type: "Corporate",
-    date: "2024-07-20",
-    time: "19:00",
-    location: "Tech Center, SF",
-    guests: 80,
-    chef: "Chef Sarah Johnson",
-    client: {
-      name: "TechCorp Inc.",
-      email: "events@techcorp.com",
-      phone: "+1 (555) 234-5678"
-    },
-    status: "pending",
-    price: 2400,
-    description: "Annual corporate dinner with French cuisine theme"
-  },
-  {
-    id: 3,
-    title: "Birthday Celebration",
-    type: "Birthday",
-    date: "2024-07-18",
-    time: "17:00",
-    location: "Private Home, LA",
-    guests: 25,
-    chef: "Chef David Chen",
-    client: {
-      name: "Michael Rodriguez",
-      email: "michael@example.com",
-      phone: "+1 (555) 345-6789"
-    },
-    status: "confirmed",
-    price: 1200,
-    description: "50th birthday celebration with Asian fusion menu"
-  }
-];
+import { Calendar, MapPin, Users, Clock, Phone, Mail, Search, Loader2 } from "lucide-react";
+import { useEvents } from "@/hooks/useEvents";
+import { Event } from "@/services/eventService";
 
 export const EventManagement = () => {
-  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const { events, loading, updateEventStatus } = useEvents();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const { toast } = useToast();
 
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.chef.toLowerCase().includes(searchTerm.toLowerCase());
+                         event.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.chef?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || event.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const updateEventStatus = (eventId: number, newStatus: Event['status']) => {
-    setEvents(events.map(event => 
-      event.id === eventId ? { ...event, status: newStatus } : event
-    ));
-    toast({
-      title: "Success",
-      description: `Event status updated to ${newStatus}`,
-    });
+  const handleUpdateEventStatus = async (eventId: string, newStatus: Event['status']) => {
+    await updateEventStatus(eventId, newStatus);
   };
 
   const getStatusColor = (status: Event['status']) => {
@@ -117,6 +35,14 @@ export const EventManagement = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -163,7 +89,7 @@ export const EventManagement = () => {
                   <CardDescription className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{event.type}</Badge>
                     <span>•</span>
-                    <span>{event.chef}</span>
+                    <span>{event.chef?.name || 'No chef assigned'}</span>
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -200,28 +126,32 @@ export const EventManagement = () => {
                   <h4 className="font-medium text-sm">Client Information</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{event.client.name}</span>
+                      <span className="font-medium">{event.client_name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-gray-400" />
-                      <span>{event.client.email}</span>
+                      <span>{event.client_email}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <span>{event.client.phone}</span>
-                    </div>
+                    {event.client_phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span>{event.client_phone}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               
-              <p className="text-sm text-gray-600 mb-4">{event.description}</p>
+              {event.description && (
+                <p className="text-sm text-gray-600 mb-4">{event.description}</p>
+              )}
               
               <div className="flex flex-wrap gap-2">
                 {event.status === 'pending' && (
                   <>
                     <Button
                       size="sm"
-                      onClick={() => updateEventStatus(event.id, 'confirmed')}
+                      onClick={() => handleUpdateEventStatus(event.id, 'confirmed')}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       Confirm
@@ -229,7 +159,7 @@ export const EventManagement = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => updateEventStatus(event.id, 'cancelled')}
+                      onClick={() => handleUpdateEventStatus(event.id, 'cancelled')}
                       className="text-red-600 hover:text-red-700"
                     >
                       Cancel
@@ -239,7 +169,7 @@ export const EventManagement = () => {
                 {event.status === 'confirmed' && (
                   <Button
                     size="sm"
-                    onClick={() => updateEventStatus(event.id, 'completed')}
+                    onClick={() => handleUpdateEventStatus(event.id, 'completed')}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     Mark Complete

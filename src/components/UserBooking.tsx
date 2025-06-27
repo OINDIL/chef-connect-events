@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,62 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Star, MapPin, Users, Calendar, Clock, ChefHat, Search } from "lucide-react";
+import { Star, MapPin, Users, Calendar, Clock, ChefHat, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Chef {
-  id: number;
-  name: string;
-  specialty: string;
-  rating: number;
-  location: string;
-  priceRange: string;
-  experience: number;
-  image: string;
-  bio: string;
-}
-
-const availableChefs: Chef[] = [
-  {
-    id: 1,
-    name: "Chef Mario Rossi",
-    specialty: "Italian Cuisine",
-    rating: 4.9,
-    location: "New York, NY",
-    priceRange: "$150-250/hour",
-    experience: 15,
-    image: "photo-1649972904349-6e44c42644a7",
-    bio: "Passionate Italian chef with 15 years of experience in fine dining and traditional Italian cooking."
-  },
-  {
-    id: 2,
-    name: "Chef Sarah Johnson",
-    specialty: "French Cuisine",
-    rating: 4.8,
-    location: "Los Angeles, CA",
-    priceRange: "$120-200/hour",
-    experience: 12,
-    image: "photo-1488590528505-98d2b5aba04b",
-    bio: "French cuisine specialist with expertise in molecular gastronomy and classic French techniques."
-  },
-  {
-    id: 3,
-    name: "Chef David Chen",
-    specialty: "Asian Fusion",
-    rating: 4.7,
-    location: "San Francisco, CA",
-    priceRange: "$100-180/hour",
-    experience: 10,
-    image: "photo-1581091226825-a6a2a5aee158",
-    bio: "Creative Asian fusion chef blending traditional Asian flavors with modern cooking techniques."
-  }
-];
+import { chefService, Chef } from "@/services/chefService";
+import { eventService, CreateEventData } from "@/services/eventService";
 
 export const UserBooking = () => {
+  const [chefs, setChefs] = useState<Chef[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedChef, setSelectedChef] = useState<Chef | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const [bookingForm, setBookingForm] = useState({
@@ -79,14 +36,34 @@ export const UserBooking = () => {
     budget: ""
   });
 
-  const filteredChefs = availableChefs.filter(chef => {
+  useEffect(() => {
+    const fetchChefs = async () => {
+      try {
+        const data = await chefService.getAllChefs();
+        setChefs(data.filter(chef => chef.status === 'active'));
+      } catch (error) {
+        console.error('Error fetching chefs:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load chefs",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChefs();
+  }, [toast]);
+
+  const filteredChefs = chefs.filter(chef => {
     const matchesSearch = chef.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          chef.specialty.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSpecialty = specialtyFilter === "all" || chef.specialty.toLowerCase().includes(specialtyFilter.toLowerCase());
     return matchesSearch && matchesSpecialty;
   });
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedChef || !bookingForm.eventType || !bookingForm.date || !bookingForm.clientName || !bookingForm.clientEmail) {
       toast({
         title: "Error",
@@ -96,27 +73,66 @@ export const UserBooking = () => {
       return;
     }
 
-    toast({
-      title: "Booking Submitted!",
-      description: `Your booking with ${selectedChef.name} has been submitted for review.`,
-    });
+    try {
+      setIsSubmitting(true);
+      
+      const eventData: CreateEventData = {
+        title: `${bookingForm.eventType} Event`,
+        type: bookingForm.eventType,
+        date: bookingForm.date,
+        time: bookingForm.time || '18:00',
+        location: bookingForm.location || 'TBD',
+        guests: parseInt(bookingForm.guests) || 1,
+        chef_id: selectedChef.id,
+        client_name: bookingForm.clientName,
+        client_email: bookingForm.clientEmail,
+        client_phone: bookingForm.clientPhone,
+        status: 'pending',
+        price: 0, // Will be calculated based on chef's rates
+        description: bookingForm.description
+      };
 
-    // Reset form
-    setBookingForm({
-      eventType: "",
-      date: "",
-      time: "",
-      location: "",
-      guests: "",
-      clientName: "",
-      clientEmail: "",
-      clientPhone: "",
-      description: "",
-      budget: ""
-    });
-    setIsBookingDialogOpen(false);
-    setSelectedChef(null);
+      await eventService.createEvent(eventData);
+
+      toast({
+        title: "Booking Submitted!",
+        description: `Your booking with ${selectedChef.name} has been submitted for review.`,
+      });
+
+      // Reset form
+      setBookingForm({
+        eventType: "",
+        date: "",
+        time: "",
+        location: "",
+        guests: "",
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        description: "",
+        budget: ""
+      });
+      setIsBookingDialogOpen(false);
+      setSelectedChef(null);
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -161,7 +177,7 @@ export const UserBooking = () => {
             <CardHeader className="pb-4">
               <div className="flex flex-col items-center space-y-3">
                 <img
-                  src={`https://images.unsplash.com/${chef.image}?auto=format&fit=crop&w=200&h=200`}
+                  src={`https://images.unsplash.com/${chef.image_url || 'photo-1649972904349-6e44c42644a7'}?auto=format&fit=crop&w=200&h=200`}
                   alt={chef.name}
                   className="w-20 h-20 rounded-full object-cover ring-4 ring-blue-50"
                 />
@@ -177,18 +193,24 @@ export const UserBooking = () => {
                   <Star className="h-4 w-4 text-yellow-500" />
                   <span className="font-medium">{chef.rating}</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span>{chef.location}</span>
-                </div>
+                {chef.location && (
+                  <div className="flex items-center space-x-1">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span>{chef.location}</span>
+                  </div>
+                )}
               </div>
               
               <div className="text-center">
                 <Badge variant="outline" className="mb-2">
                   {chef.experience} years experience
                 </Badge>
-                <p className="text-sm text-gray-600 mb-3">{chef.bio}</p>
-                <p className="text-lg font-semibold text-green-600">{chef.priceRange}</p>
+                {chef.bio && (
+                  <p className="text-sm text-gray-600 mb-3">{chef.bio}</p>
+                )}
+                {chef.price_range && (
+                  <p className="text-lg font-semibold text-green-600">{chef.price_range}</p>
+                )}
               </div>
 
               <Dialog open={isBookingDialogOpen && selectedChef?.id === chef.id} onOpenChange={setIsBookingDialogOpen}>
@@ -322,7 +344,8 @@ export const UserBooking = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 pt-4">
-                    <Button onClick={handleBooking} className="flex-1">
+                    <Button onClick={handleBooking} className="flex-1" disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                       Submit Booking Request
                     </Button>
                     <Button variant="outline" onClick={() => setIsBookingDialogOpen(false)}>
