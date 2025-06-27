@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Star, MapPin, Users, Calendar, Clock, ChefHat, Search, Loader2 } from "
 import { useToast } from "@/hooks/use-toast";
 import { chefService, Chef } from "@/services/chefService";
 import { eventService, CreateEventData } from "@/services/eventService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const UserBooking = () => {
   const [chefs, setChefs] = useState<Chef[]>([]);
@@ -88,11 +88,21 @@ export const UserBooking = () => {
         client_email: bookingForm.clientEmail,
         client_phone: bookingForm.clientPhone,
         status: 'pending',
-        price: 0, // Will be calculated based on chef's rates
+        price: 0,
         description: bookingForm.description
       };
 
-      await eventService.createEvent(eventData);
+      const newEvent = await eventService.createEvent(eventData);
+
+      // Create user booking record if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('user_bookings').insert([{
+          user_id: user.id,
+          event_id: newEvent.id,
+          notes: bookingForm.description
+        }]);
+      }
 
       toast({
         title: "Booking Submitted!",

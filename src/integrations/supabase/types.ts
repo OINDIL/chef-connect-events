@@ -78,6 +78,7 @@ export type Database = {
           title: string
           type: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           chef_id?: string | null
@@ -96,6 +97,7 @@ export type Database = {
           title: string
           type: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           chef_id?: string | null
@@ -114,6 +116,7 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -133,6 +136,7 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
@@ -142,6 +146,7 @@ export type Database = {
           id: string
           last_name?: string | null
           phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
@@ -151,19 +156,67 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Relationships: []
+      }
+      user_bookings: {
+        Row: {
+          booking_date: string
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          rating: number | null
+          review: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_date?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          review?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_date?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          review?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -278,6 +331,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "user"],
+    },
   },
 } as const

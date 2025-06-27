@@ -62,9 +62,16 @@ export const eventService = {
   },
 
   async createEvent(eventData: CreateEventData): Promise<Event> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const dataToInsert = {
+      ...eventData,
+      user_id: user?.id || null
+    };
+
     const { data, error } = await supabase
       .from('events')
-      .insert([eventData])
+      .insert([dataToInsert])
       .select(`
         *,
         chef:chefs(name, specialty)
