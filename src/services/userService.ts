@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UserBooking {
@@ -19,21 +18,27 @@ export interface CreateUserBookingData {
 }
 
 export const userService = {
-  async createBooking(bookingData: CreateUserBookingData): Promise<UserBooking> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+  async createBooking(
+    bookingData: CreateUserBookingData
+  ): Promise<UserBooking> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
 
     const { data, error } = await supabase
-      .from('user_bookings')
-      .insert([{
-        ...bookingData,
-        user_id: user.id
-      }])
+      .from("user_bookings")
+      .insert([
+        {
+          ...bookingData,
+          user_id: user.id,
+        },
+      ])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating booking:', error);
+      console.error("Error creating booking:", error);
       throw error;
     }
 
@@ -41,40 +46,46 @@ export const userService = {
   },
 
   async getUserBookings(): Promise<UserBooking[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
 
     const { data, error } = await supabase
-      .from('user_bookings')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .from("user_bookings")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('Error fetching user bookings:', error);
+      console.error("Error fetching user bookings:", error);
       throw error;
     }
 
     return data || [];
   },
 
-  async updateBookingReview(bookingId: string, rating: number, review: string): Promise<UserBooking> {
+  async updateBookingReview(
+    bookingId: string,
+    rating: number,
+    review: string
+  ): Promise<UserBooking> {
     const { data, error } = await supabase
-      .from('user_bookings')
-      .update({ 
-        rating, 
-        review, 
-        updated_at: new Date().toISOString() 
+      .from("user_bookings")
+      .update({
+        rating,
+        review,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', bookingId)
+      .eq("id", bookingId)
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating booking review:', error);
+      console.error("Error updating booking review:", error);
       throw error;
     }
 
     return data;
-  }
+  },
 };

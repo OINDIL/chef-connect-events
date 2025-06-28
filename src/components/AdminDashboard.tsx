@@ -1,6 +1,11 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChefManagement } from "./ChefManagement";
 import { EventManagement } from "./EventManagement";
@@ -11,15 +16,21 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
-          <p className="text-gray-600">Manage your chefs, events, and view analytics</p>
+          <p className="text-gray-600">
+            Manage your chefs, events, and view analytics
+          </p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-4 lg:w-1/2">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />

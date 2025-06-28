@@ -1,13 +1,26 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Calendar, Star, MapPin, Phone, Mail, Loader2 } from "lucide-react";
+import {
+  User,
+  Calendar,
+  Star,
+  MapPin,
+  Phone,
+  Mail,
+  Loader2,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -59,15 +72,15 @@ export const UserProfile = () => {
   const fetchProfile = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error fetching profile:", error);
       toast({
         title: "Error",
         description: "Failed to load profile",
@@ -81,8 +94,9 @@ export const UserProfile = () => {
   const fetchBookings = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_bookings')
-        .select(`
+        .from("user_bookings")
+        .select(
+          `
           *,
           event:events(
             title,
@@ -91,14 +105,15 @@ export const UserProfile = () => {
             location,
             chef:chefs(name, specialty)
           )
-        `)
-        .eq('user_id', user?.id)
-        .order('booking_date', { ascending: false });
+        `
+        )
+        .eq("user_id", user?.id)
+        .order("booking_date", { ascending: false });
 
       if (error) throw error;
       setBookings(data || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error("Error fetching bookings:", error);
     }
   };
 
@@ -108,14 +123,14 @@ export const UserProfile = () => {
     try {
       setSaving(true);
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           first_name: profile.first_name,
           last_name: profile.last_name,
           phone: profile.phone,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', user?.id);
+        .eq("id", user?.id);
 
       if (error) throw error;
 
@@ -124,7 +139,7 @@ export const UserProfile = () => {
         description: "Profile updated successfully!",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "Failed to update profile",
@@ -135,12 +150,16 @@ export const UserProfile = () => {
     }
   };
 
-  const updateBookingReview = async (bookingId: string, rating: number, review: string) => {
+  const updateBookingReview = async (
+    bookingId: string,
+    rating: number,
+    review: string
+  ) => {
     try {
       const { error } = await supabase
-        .from('user_bookings')
+        .from("user_bookings")
         .update({ rating, review, updated_at: new Date().toISOString() })
-        .eq('id', bookingId);
+        .eq("id", bookingId);
 
       if (error) throw error;
 
@@ -148,10 +167,10 @@ export const UserProfile = () => {
         title: "Success",
         description: "Review updated successfully!",
       });
-      
+
       fetchBookings();
     } catch (error) {
-      console.error('Error updating review:', error);
+      console.error("Error updating review:", error);
       toast({
         title: "Error",
         description: "Failed to update review",
@@ -177,18 +196,24 @@ export const UserProfile = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">My Profile</h2>
-          <p className="text-gray-600">Manage your account and booking history</p>
+          <p className="text-gray-600">
+            Manage your account and booking history
+          </p>
         </div>
         <Button variant="outline" onClick={signOut}>
           Sign Out
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-2 lg:w-1/2">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -215,7 +240,9 @@ export const UserProfile = () => {
                   <Input
                     id="firstName"
                     value={profile.first_name || ""}
-                    onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, first_name: e.target.value })
+                    }
                     placeholder="Enter your first name"
                   />
                 </div>
@@ -224,7 +251,9 @@ export const UserProfile = () => {
                   <Input
                     id="lastName"
                     value={profile.last_name || ""}
-                    onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, last_name: e.target.value })
+                    }
                     placeholder="Enter your last name"
                   />
                 </div>
@@ -243,14 +272,18 @@ export const UserProfile = () => {
                   <Input
                     id="phone"
                     value={profile.phone || ""}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, phone: e.target.value })
+                    }
                     placeholder="Enter your phone number"
                   />
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>
-                  {profile.role === 'admin' ? 'Administrator' : 'User'}
+                <Badge
+                  variant={profile.role === "admin" ? "default" : "secondary"}
+                >
+                  {profile.role === "admin" ? "Administrator" : "User"}
                 </Badge>
               </div>
               <Button onClick={updateProfile} disabled={saving}>
@@ -268,7 +301,9 @@ export const UserProfile = () => {
                 <CardContent className="text-center py-8">
                   <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">No bookings found</p>
-                  <p className="text-gray-400">Your booking history will appear here</p>
+                  <p className="text-gray-400">
+                    Your booking history will appear here
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -277,16 +312,23 @@ export const UserProfile = () => {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg">{booking.event.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {booking.event.title}
+                        </CardTitle>
                         <CardDescription>
-                          <Badge variant="outline" className="mr-2">{booking.event.type}</Badge>
-                          Booked on {new Date(booking.booking_date).toLocaleDateString()}
+                          <Badge variant="outline" className="mr-2">
+                            {booking.event.type}
+                          </Badge>
+                          Booked on{" "}
+                          {new Date(booking.booking_date).toLocaleDateString()}
                         </CardDescription>
                       </div>
                       {booking.rating && (
                         <div className="flex items-center space-x-1">
                           <Star className="h-4 w-4 text-yellow-500" />
-                          <span className="font-medium">{booking.rating}/5</span>
+                          <span className="font-medium">
+                            {booking.rating}/5
+                          </span>
                         </div>
                       )}
                     </div>
@@ -296,7 +338,9 @@ export const UserProfile = () => {
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{new Date(booking.event.date).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(booking.event.date).toLocaleDateString()}
+                          </span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <MapPin className="h-4 w-4 text-gray-400" />
@@ -310,18 +354,20 @@ export const UserProfile = () => {
                             <span>{booking.event.chef.name}</span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-gray-600">{booking.event.chef.specialty}</span>
+                            <span className="text-gray-600">
+                              {booking.event.chef.specialty}
+                            </span>
                           </div>
                         </div>
                       )}
                     </div>
-                    
+
                     {booking.notes && (
                       <div className="text-sm">
                         <strong>Notes:</strong> {booking.notes}
                       </div>
                     )}
-                    
+
                     {booking.review && (
                       <div className="text-sm bg-gray-50 p-3 rounded">
                         <strong>Your Review:</strong>
